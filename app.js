@@ -77,7 +77,7 @@ function setRole(role) {
   authScreen.classList.add("hidden");
   appShell.classList.remove("hidden");
   appShell.classList.toggle("readonly", role !== "admin");
-  roleBadge.textContent = role === "admin" ? "Admin: toan quyen" : "User: chi xem";
+  roleBadge.textContent = role === "admin" ? "Admin: toàn quyền" : "User: chỉ xem";
   render();
 }
 
@@ -216,7 +216,7 @@ function mapCsvRows(csvRows) {
 }
 
 function formatFileLabel(row) {
-  return row.pdfName ? "Doi PDF" : "Gan PDF";
+  return row.pdfName ? "Đổi PDF" : "Gắn PDF";
 }
 
 function getDeviceNameFromPdf(fileName) {
@@ -238,15 +238,15 @@ function render() {
           <input type="file" accept="application/pdf" data-pdf-id="${row.id}" />
           ${formatFileLabel(row)}
         </label>`
-      : `<span class="pdf-name">${row.pdfName || "Chua co PDF"}</span>`;
+      : `<span class="pdf-name">${row.pdfName || "Chưa có PDF"}</span>`;
     const removeCell = isAdmin()
-      ? `<button class="remove-row" type="button" data-remove-id="${row.id}">Xoa</button>`
+      ? `<button class="remove-row" type="button" data-remove-id="${row.id}">Xóa</button>`
       : "";
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${index + 1}</td>
-      <td><input class="type-cell" type="text" data-key="loaiThietBi" data-id="${row.id}" placeholder="(trong)" ${readOnlyAttribute} /></td>
+      <td><input class="type-cell" type="text" data-key="loaiThietBi" data-id="${row.id}" placeholder="(trống)" ${readOnlyAttribute} /></td>
       <td><input type="text" data-key="nhaSanXuat" data-id="${row.id}" ${readOnlyAttribute} /></td>
       <td><input type="number" min="0" data-key="sl" data-id="${row.id}" ${readOnlyAttribute} /></td>
       <td><input type="text" data-key="model" data-id="${row.id}" ${readOnlyAttribute} /></td>
@@ -288,7 +288,7 @@ function clearObjectUrl() {
 
 async function addWatermark(file) {
   if (!window.PDFLib) {
-    throw new Error("Thu vien watermark PDF chua tai xong. Hay thu lai sau vai giay.");
+    throw new Error("Thư viện watermark PDF chưa tải xong. Hãy thử lại sau vài giây.");
   }
 
   const { PDFDocument, StandardFonts, rgb, degrees } = window.PDFLib;
@@ -350,7 +350,7 @@ async function getPreviewPdf(row) {
 
 async function showPreview(row) {
   clearObjectUrl();
-  previewTitle.textContent = row.loaiThietBi || "Loai_thiet_bi";
+  previewTitle.textContent = row.loaiThietBi || "Loại thiết bị";
   previewMeta.textContent = row.pdfName || "";
   const previewPdf = await getPreviewPdf(row);
 
@@ -397,7 +397,7 @@ tableBody.addEventListener("change", async (event) => {
 
   const file = pdfInput.files[0];
   if (file.type !== "application/pdf") {
-    alert("Hay chon file PDF.");
+    alert("Hãy chọn file PDF.");
     pdfInput.value = "";
     return;
   }
@@ -416,7 +416,7 @@ tableBody.addEventListener("change", async (event) => {
     render();
   } catch (error) {
     console.error(error);
-    alert(`Khong the them watermark vao PDF: ${error.message}`);
+    alert(`Không thể thêm watermark vào PDF: ${error.message}`);
     pdfInput.value = "";
   }
 });
@@ -431,7 +431,7 @@ tableBody.addEventListener("click", async (event) => {
     await showPreview(row);
   } catch (error) {
     console.error(error);
-    alert(`Khong the mo PDF preview: ${error.message}`);
+    alert(`Không thể mở PDF preview: ${error.message}`);
   }
 });
 
@@ -463,7 +463,7 @@ addRowButton.addEventListener("click", async () => {
 
 clearButton.addEventListener("click", async () => {
   if (!isAdmin()) return;
-  if (!confirm("Xoa toan bo du lieu dang luu tren trinh duyet nay?")) return;
+  if (!confirm("Xóa toàn bộ dữ liệu đang lưu trên trình duyệt này?")) return;
   rows = [];
   await clearRows();
   hidePreview();
@@ -497,7 +497,7 @@ adminLoginForm.addEventListener("submit", (event) => {
     return;
   }
 
-  loginError.textContent = "Tai khoan hoac mat khau khong dung.";
+  loginError.textContent = "Tài khoản hoặc mật khẩu không đúng.";
 });
 
 logoutButton.addEventListener("click", resetAuth);
@@ -535,5 +535,5 @@ openDb()
   })
   .catch((error) => {
     console.error(error);
-    alert("Khong the khoi tao noi luu du lieu tren trinh duyet.");
+    alert("Không thể khởi tạo nơi lưu dữ liệu trên trình duyệt.");
   });

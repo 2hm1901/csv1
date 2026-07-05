@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quan ly thiet bi</title>
+    <title>Quản lý thiết bị</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <section id="authScreen" class="auth-screen" aria-label="Chon vai tro">
+    <section id="authScreen" class="auth-screen" aria-label="Chọn vai trò">
       <div class="auth-panel">
-        <h1>Quan ly thiet bi</h1>
-        <p>Chon che do truy cap de tiep tuc.</p>
+        <h1>Quản lý thiết bị</h1>
+        <p>Chọn chế độ truy cập để tiếp tục.</p>
 
         <div id="roleChoices" class="role-choices">
           <button id="adminChoice" type="button">Admin</button>
@@ -19,37 +19,37 @@
 
         <form id="adminLoginForm" class="admin-login hidden">
           <label>
-            Tai khoan
+            Tài khoản
             <input id="adminUsername" type="text" autocomplete="username" />
           </label>
           <label>
-            Mat khau
+            Mật khẩu
             <input id="adminPassword" type="password" autocomplete="current-password" />
           </label>
           <p id="loginError" class="login-error" aria-live="polite"></p>
           <div class="login-actions">
-            <button type="submit">Dang nhap</button>
-            <button id="backToRoles" type="button">Quay lai</button>
+            <button type="submit">Đăng nhập</button>
+            <button id="backToRoles" type="button">Quay lại</button>
           </div>
         </form>
       </div>
     </section>
 
     <main class="app-shell hidden">
-      <section class="toolbar" aria-label="Cong cu quan ly du lieu">
+      <section class="toolbar" aria-label="Công cụ quản lý dữ liệu">
         <div>
-          <h1>Quan ly thiet bi</h1>
-          <p>Upload CSV hoac nhap tay tung dong, gan PDF va click vao Loai_thiet_bi de xem.</p>
+          <h1>Quản lý thiết bị</h1>
+          <p>Tải CSV hoặc nhập tay từng dòng, gắn PDF và bấm vào Loại thiết bị để xem.</p>
         </div>
         <div class="toolbar-actions">
           <span id="roleBadge" class="role-badge"></span>
           <label class="file-button">
             <input id="csvInput" type="file" accept=".csv,text/csv" />
-            Upload CSV
+            Tải CSV
           </label>
-          <button id="addRowButton" type="button">Them dong</button>
-          <button id="clearButton" class="danger" type="button">Xoa du lieu</button>
-          <button id="logoutButton" type="button">Doi vai tro</button>
+          <button id="addRowButton" type="button">Thêm dòng</button>
+          <button id="clearButton" class="danger" type="button">Xóa dữ liệu</button>
+          <button id="logoutButton" type="button">Đăng xuất</button>
         </div>
       </section>
 
@@ -59,24 +59,24 @@
             <strong id="previewTitle">PDF</strong>
             <span id="previewMeta"></span>
           </div>
-          <iframe id="previewFrame" title="Xem truoc PDF"></iframe>
-          <div id="previewFallback" class="preview-fallback">Dong nay chua gan file PDF.</div>
+          <iframe id="previewFrame" title="Xem trước PDF"></iframe>
+          <div id="previewFallback" class="preview-fallback">Dòng này chưa gắn file PDF.</div>
         </aside>
 
-        <section class="panel" aria-label="Bang thiet bi">
+        <section class="panel" aria-label="Bảng thiết bị">
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>STT</th>
-                  <th>Loai_thiet_bi</th>
-                  <th>Ten nha san xuat</th>
+                  <th>Loại thiết bị</th>
+                  <th>Tên nhà sản xuất</th>
                   <th>SL</th>
-                  <th>Doi may (Model)</th>
-                  <th>Cong suat</th>
-                  <th>Don vi so huu</th>
-                  <th>THOI HAN KIEM DINH</th>
-                  <th>Bien_so</th>
+                  <th>Đời máy (Model)</th>
+                  <th>Công suất</th>
+                  <th>Đơn vị sở hữu</th>
+                  <th>Thời hạn kiểm định</th>
+                  <th>Biển số</th>
                   <th>PDF</th>
                   <th></th>
                 </tr>
@@ -85,7 +85,7 @@
             </table>
           </div>
           <div id="emptyState" class="empty-state">
-            Chua co du lieu. Hay upload CSV hoac them dong moi.
+            Chưa có dữ liệu. Hãy tải CSV hoặc thêm dòng mới.
           </div>
         </section>
       </div>

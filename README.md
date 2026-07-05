@@ -1,31 +1,31 @@
 # csv1
 
-Website tinh de quan ly bang thiet bi va xem truoc PDF khi click vao cot `Loai_thiet_bi`.
+Website tĩnh để quản lý bảng thiết bị và xem trước PDF khi bấm vào cột `Loại thiết bị`.
 
-## Cach dung
+## Cách dùng
 
-1. Mo `index.html` bang trinh duyet.
-2. Chon `User` de vao thang, hoac chon `Admin` va dang nhap bang tai khoan `giang`, mat khau `giang123`.
-3. Che do `User` chi xem bang va click `Loai_thiet_bi` de xem PDF.
-4. Che do `Admin` duoc upload CSV, them/sua/xoa dong va gan file PDF.
-5. Bam `Them dong` de nhap tay du lieu, hoac `Upload CSV` de nap bang co san.
-6. Bam `Gan PDF` tren tung dong de upload file PDF tuong ung. Che do `Admin` se giu PDF goc khong watermark.
-7. Ten file PDF se duoc tu dong dien vao cot `Loai_thiet_bi`; neu chua dung thi admin sua truc tiep trong o nay.
-8. Click vao gia tri trong cot `Loai_thiet_bi` de xem file PDF.
+1. Mở `index.html` bằng trình duyệt.
+2. Chọn `User` để vào thẳng, hoặc chọn `Admin` và đăng nhập bằng tài khoản `giang`, mật khẩu `giang123`.
+3. Chế độ `User` chỉ xem bảng và bấm `Loại thiết bị` để xem PDF.
+4. Chế độ `Admin` được upload CSV, thêm/sửa/xóa dòng và gắn file PDF.
+5. Bấm `Thêm dòng` để nhập tay dữ liệu, hoặc `Tải CSV` để nạp bảng có sẵn.
+6. Bấm `Gắn PDF` trên từng dòng để upload file PDF tương ứng. Chế độ `Admin` sẽ giữ PDF gốc không watermark.
+7. Tên file PDF sẽ được tự động điền vào cột `Loại thiết bị`; nếu chưa đúng thì admin sửa trực tiếp trong ô này.
+8. Bấm vào giá trị trong cột `Loại thiết bị` để xem file PDF.
 
-Du lieu va PDF duoc luu trong IndexedDB cua chinh trinh duyet dang dung. Neu doi may, doi trinh duyet, xoa site data hoac dung che do an danh thi du lieu co the khong con.
+Dữ liệu và PDF được lưu trong IndexedDB của chính trình duyệt đang dùng. Nếu đổi máy, đổi trình duyệt, xóa site data hoặc dùng chế độ ẩn danh thì dữ liệu có thể không còn.
 
-## Dinh dang CSV
+## Định dạng CSV
 
-Hang dau tien la header. App se nhan cac cot sau:
+Hàng đầu tiên là header. App sẽ nhận các cột sau:
 
-- `Loai_thiet_bi`
-- `Ten nha san xuat`
+- `Loại thiết bị`
+- `Tên nhà sản xuất`
 - `SL`
-- `Doi may (Model)`
-- `Cong suat`
-- `Don vi so huu`
-- `THOI HAN KIEM DINH`
-- `Bien_so`
+- `Đời máy (Model)`
+- `Công suất`
+- `Đơn vị sở hữu`
+- `Thời hạn kiểm định`
+- `Biển số`
 
-Ten cot co the viet co dau hoac khong dau.
+Tên cột có thể viết có dấu hoặc không dấu.
