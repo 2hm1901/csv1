@@ -76,13 +76,16 @@ function setRole(role) {
   sessionStorage.setItem("csv1-role", role);
   authScreen.classList.add("hidden");
   appShell.classList.remove("hidden");
-  roleBadge.textContent = role === "admin" ? "Admin: khong watermark" : "User: co watermark";
+  appShell.classList.toggle("readonly", role !== "admin");
+  roleBadge.textContent = role === "admin" ? "Admin: toan quyen" : "User: chi xem";
+  render();
 }
 
 function resetAuth() {
   currentRole = "";
   sessionStorage.removeItem("csv1-role");
   hidePreview();
+  appShell.classList.remove("readonly");
   appShell.classList.add("hidden");
   authScreen.classList.remove("hidden");
   roleChoices.classList.remove("hidden");
@@ -218,29 +221,39 @@ function getDeviceNameFromPdf(fileName) {
   return fileName.replace(/\.pdf$/i, "").trim();
 }
 
+function isAdmin() {
+  return currentRole === "admin";
+}
+
 function render() {
   tableBody.innerHTML = "";
   emptyState.classList.toggle("hidden", rows.length > 0);
 
   rows.forEach((row, index) => {
+    const readOnlyAttribute = isAdmin() ? "" : "readonly";
+    const pdfCell = isAdmin()
+      ? `<label class="pdf-upload">
+          <input type="file" accept="application/pdf" data-pdf-id="${row.id}" />
+          ${formatFileLabel(row)}
+        </label>`
+      : `<span class="pdf-name">${row.pdfName || "Chua co PDF"}</span>`;
+    const removeCell = isAdmin()
+      ? `<button class="remove-row" type="button" data-remove-id="${row.id}">Xoa</button>`
+      : "";
+
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${index + 1}</td>
-      <td><input class="type-cell" type="text" data-key="loaiThietBi" data-id="${row.id}" placeholder="(trong)" /></td>
-      <td><input type="text" data-key="nhaSanXuat" data-id="${row.id}" /></td>
-      <td><input type="number" min="0" data-key="sl" data-id="${row.id}" /></td>
-      <td><input type="text" data-key="model" data-id="${row.id}" /></td>
-      <td><input type="text" data-key="congSuat" data-id="${row.id}" /></td>
-      <td><input type="text" data-key="donViSoHuu" data-id="${row.id}" /></td>
-      <td><input type="text" data-key="thoiHanKiemDinh" data-id="${row.id}" /></td>
-      <td><input type="text" data-key="bienSo" data-id="${row.id}" /></td>
-      <td>
-        <label class="pdf-upload">
-          <input type="file" accept="application/pdf" data-pdf-id="${row.id}" />
-          ${formatFileLabel(row)}
-        </label>
-      </td>
-      <td><button class="remove-row" type="button" data-remove-id="${row.id}">Xoa</button></td>
+      <td><input class="type-cell" type="text" data-key="loaiThietBi" data-id="${row.id}" placeholder="(trong)" ${readOnlyAttribute} /></td>
+      <td><input type="text" data-key="nhaSanXuat" data-id="${row.id}" ${readOnlyAttribute} /></td>
+      <td><input type="number" min="0" data-key="sl" data-id="${row.id}" ${readOnlyAttribute} /></td>
+      <td><input type="text" data-key="model" data-id="${row.id}" ${readOnlyAttribute} /></td>
+      <td><input type="text" data-key="congSuat" data-id="${row.id}" ${readOnlyAttribute} /></td>
+      <td><input type="text" data-key="donViSoHuu" data-id="${row.id}" ${readOnlyAttribute} /></td>
+      <td><input type="text" data-key="thoiHanKiemDinh" data-id="${row.id}" ${readOnlyAttribute} /></td>
+      <td><input type="text" data-key="bienSo" data-id="${row.id}" ${readOnlyAttribute} /></td>
+      <td>${pdfCell}</td>
+      <td>${removeCell}</td>
     `;
 
     tr.querySelectorAll("input[data-key]").forEach((input) => {
@@ -340,6 +353,7 @@ function hidePreview() {
 }
 
 tableBody.addEventListener("input", (event) => {
+  if (!isAdmin()) return;
   const input = event.target.closest("input[data-key]");
   if (!input) return;
   const row = findRow(input.dataset.id);
@@ -348,6 +362,7 @@ tableBody.addEventListener("input", (event) => {
 });
 
 tableBody.addEventListener("change", async (event) => {
+  if (!isAdmin()) return;
   const fieldInput = event.target.closest("input[data-key]");
   if (fieldInput) {
     await updateField(fieldInput.dataset.id, fieldInput.dataset.key, fieldInput.value);
@@ -389,6 +404,7 @@ tableBody.addEventListener("click", (event) => {
 });
 
 tableBody.addEventListener("click", async (event) => {
+  if (!isAdmin()) return;
   const button = event.target.closest("[data-remove-id]");
   if (!button) return;
 
@@ -406,6 +422,7 @@ document.addEventListener("click", (event) => {
 });
 
 addRowButton.addEventListener("click", async () => {
+  if (!isAdmin()) return;
   const row = createEmptyRow();
   rows.push(row);
   await saveRow(row);
@@ -413,6 +430,7 @@ addRowButton.addEventListener("click", async () => {
 });
 
 clearButton.addEventListener("click", async () => {
+  if (!isAdmin()) return;
   if (!confirm("Xoa toan bo du lieu dang luu tren trinh duyet nay?")) return;
   rows = [];
   await clearRows();
@@ -453,6 +471,11 @@ adminLoginForm.addEventListener("submit", (event) => {
 logoutButton.addEventListener("click", resetAuth);
 
 csvInput.addEventListener("change", async () => {
+  if (!isAdmin()) {
+    csvInput.value = "";
+    return;
+  }
+
   const file = csvInput.files[0];
   if (!file) return;
 

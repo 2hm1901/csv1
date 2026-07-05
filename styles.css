@@ -163,6 +163,12 @@ button.danger {
   pointer-events: none;
 }
 
+.app-shell.readonly .file-button,
+.app-shell.readonly #addRowButton,
+.app-shell.readonly #clearButton {
+  display: none;
+}
+
 .content-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -269,6 +275,30 @@ td input:focus {
 
 .type-cell:focus {
   box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+td input[readonly] {
+  color: var(--text);
+  cursor: default;
+}
+
+td input[readonly]:focus {
+  box-shadow: none;
+}
+
+.type-cell[readonly] {
+  color: #0b4a89;
+  cursor: pointer;
+}
+
+.pdf-name {
+  display: block;
+  max-width: 180px;
+  overflow: hidden;
+  padding: 8px 10px;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pdf-upload {
