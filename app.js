@@ -27,6 +27,7 @@ let rows = [];
 let activeObjectUrl = "";
 let previewCloseTimer = null;
 
+const appShell = document.querySelector(".app-shell");
 const tableBody = document.querySelector("#tableBody");
 const emptyState = document.querySelector("#emptyState");
 const csvInput = document.querySelector("#csvInput");
@@ -254,34 +255,16 @@ function cancelPreviewClose() {
 
 function schedulePreviewClose() {
   cancelPreviewClose();
-  previewCloseTimer = setTimeout(hidePreview, 220);
+  previewCloseTimer = setTimeout(hidePreview, 700);
 }
 
-function positionPreview(anchor) {
-  const margin = 18;
-  const rect = pdfPreview.getBoundingClientRect();
-  const anchorRect = anchor.getBoundingClientRect();
-  let left = anchorRect.right + margin;
-  let top = anchorRect.top;
-
-  if (left + rect.width > window.innerWidth) {
-    left = anchorRect.left - rect.width - margin;
-  }
-
-  if (top + rect.height > window.innerHeight) {
-    top = window.innerHeight - rect.height - margin;
-  }
-
-  pdfPreview.style.left = `${Math.max(margin, left)}px`;
-  pdfPreview.style.top = `${Math.max(margin, top)}px`;
-}
-
-function showPreview(row, anchor) {
+function showPreview(row) {
   cancelPreviewClose();
   clearObjectUrl();
   previewTitle.textContent = row.loaiThietBi || "Loai_thiet_bi";
   previewMeta.textContent = row.pdfName || "";
   pdfPreview.classList.toggle("no-pdf", !row.pdfBlob);
+  appShell.classList.add("preview-open");
   pdfPreview.classList.add("visible");
   pdfPreview.setAttribute("aria-hidden", "false");
 
@@ -291,12 +274,11 @@ function showPreview(row, anchor) {
   } else {
     previewFrame.removeAttribute("src");
   }
-
-  positionPreview(anchor);
 }
 
 function hidePreview() {
   cancelPreviewClose();
+  appShell.classList.remove("preview-open");
   pdfPreview.classList.remove("visible");
   pdfPreview.setAttribute("aria-hidden", "true");
   previewFrame.removeAttribute("src");
@@ -340,7 +322,7 @@ tableBody.addEventListener("mouseover", (event) => {
   const typeCell = event.target.closest(".type-cell");
   if (!typeCell) return;
   const row = findRow(typeCell.dataset.id);
-  if (row) showPreview(row, typeCell);
+  if (row) showPreview(row);
 });
 
 tableBody.addEventListener("mouseout", (event) => {
