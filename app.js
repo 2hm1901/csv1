@@ -256,8 +256,8 @@ async function addWatermark(file) {
       y,
       size: fontSize,
       font,
-      color: rgb(1, 0.82, 0),
-      opacity: 0.32,
+      color: rgb(0.35, 0.35, 0.35),
+      opacity: 0.18,
       rotate: degrees(-32),
     });
   });
