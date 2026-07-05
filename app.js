@@ -25,6 +25,7 @@ const dbName = "csv1-device-table";
 let db;
 let rows = [];
 let activeObjectUrl = "";
+let previewCloseTimer = null;
 
 const tableBody = document.querySelector("#tableBody");
 const emptyState = document.querySelector("#emptyState");
@@ -244,14 +245,27 @@ function clearObjectUrl() {
   }
 }
 
-function positionPreview(event) {
+function cancelPreviewClose() {
+  if (previewCloseTimer) {
+    clearTimeout(previewCloseTimer);
+    previewCloseTimer = null;
+  }
+}
+
+function schedulePreviewClose() {
+  cancelPreviewClose();
+  previewCloseTimer = setTimeout(hidePreview, 220);
+}
+
+function positionPreview(anchor) {
   const margin = 18;
   const rect = pdfPreview.getBoundingClientRect();
-  let left = event.clientX + margin;
-  let top = event.clientY + margin;
+  const anchorRect = anchor.getBoundingClientRect();
+  let left = anchorRect.right + margin;
+  let top = anchorRect.top;
 
   if (left + rect.width > window.innerWidth) {
-    left = event.clientX - rect.width - margin;
+    left = anchorRect.left - rect.width - margin;
   }
 
   if (top + rect.height > window.innerHeight) {
@@ -262,7 +276,8 @@ function positionPreview(event) {
   pdfPreview.style.top = `${Math.max(margin, top)}px`;
 }
 
-function showPreview(row, event) {
+function showPreview(row, anchor) {
+  cancelPreviewClose();
   clearObjectUrl();
   previewTitle.textContent = row.loaiThietBi || "Loai_thiet_bi";
   previewMeta.textContent = row.pdfName || "";
@@ -277,10 +292,11 @@ function showPreview(row, event) {
     previewFrame.removeAttribute("src");
   }
 
-  positionPreview(event);
+  positionPreview(anchor);
 }
 
 function hidePreview() {
+  cancelPreviewClose();
   pdfPreview.classList.remove("visible");
   pdfPreview.setAttribute("aria-hidden", "true");
   previewFrame.removeAttribute("src");
@@ -324,16 +340,20 @@ tableBody.addEventListener("mouseover", (event) => {
   const typeCell = event.target.closest(".type-cell");
   if (!typeCell) return;
   const row = findRow(typeCell.dataset.id);
-  if (row) showPreview(row, event);
-});
-
-tableBody.addEventListener("mousemove", (event) => {
-  if (pdfPreview.classList.contains("visible")) positionPreview(event);
+  if (row) showPreview(row, typeCell);
 });
 
 tableBody.addEventListener("mouseout", (event) => {
-  if (event.target.closest(".type-cell")) hidePreview();
+  const typeCell = event.target.closest(".type-cell");
+  if (!typeCell) return;
+
+  const nextTarget = event.relatedTarget;
+  if (nextTarget && pdfPreview.contains(nextTarget)) return;
+  schedulePreviewClose();
 });
+
+pdfPreview.addEventListener("mouseenter", cancelPreviewClose);
+pdfPreview.addEventListener("mouseleave", schedulePreviewClose);
 
 tableBody.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-remove-id]");
