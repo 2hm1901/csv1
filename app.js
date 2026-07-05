@@ -236,16 +236,28 @@ async function addWatermark(file) {
 
   pages.forEach((page) => {
     const { width, height } = page.getSize();
-    const fontSize = Math.max(24, Math.min(width, height) / 16);
+    const fontSize = Math.max(32, Math.min(width, height) / 12);
     const textWidth = font.widthOfTextAtSize(watermarkText, fontSize);
+    const textHeight = font.heightAtSize(fontSize);
+    const angle = -32 * (Math.PI / 180);
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const x =
+      centerX -
+      (textWidth / 2) * Math.cos(angle) +
+      (textHeight / 2) * Math.sin(angle);
+    const y =
+      centerY -
+      (textWidth / 2) * Math.sin(angle) -
+      (textHeight / 2) * Math.cos(angle);
 
     page.drawText(watermarkText, {
-      x: (width - textWidth) / 2,
-      y: height / 2,
+      x,
+      y,
       size: fontSize,
       font,
-      color: rgb(0.35, 0.35, 0.35),
-      opacity: 0.18,
+      color: rgb(1, 0.82, 0),
+      opacity: 0.32,
       rotate: degrees(-32),
     });
   });
