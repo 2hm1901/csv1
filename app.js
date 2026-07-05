@@ -20,6 +20,7 @@ const csvHeaders = {
   bienSo: ["bien_so", "bien so", "biển số"],
 };
 
+const watermarkText = "Hoàng Giang - 0969.05.6446";
 const storeName = "rows";
 const dbName = "csv1-device-table";
 let db;
@@ -177,7 +178,7 @@ function render() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${index + 1}</td>
-      <td><span class="type-cell ${row.pdfBlob ? "has-pdf" : ""}" data-id="${row.id}"></span></td>
+      <td><input class="type-cell" type="text" data-key="loaiThietBi" data-id="${row.id}" placeholder="(trong)" /></td>
       <td><input type="text" data-key="nhaSanXuat" data-id="${row.id}" /></td>
       <td><input type="number" min="0" data-key="sl" data-id="${row.id}" /></td>
       <td><input type="text" data-key="model" data-id="${row.id}" /></td>
@@ -193,29 +194,6 @@ function render() {
       </td>
       <td><button class="remove-row" type="button" data-remove-id="${row.id}">Xoa</button></td>
     `;
-
-    const typeCell = tr.querySelector(".type-cell");
-    typeCell.textContent = row.loaiThietBi || "(trong)";
-
-    const typeInput = document.createElement("input");
-    typeInput.type = "text";
-    typeInput.dataset.key = "loaiThietBi";
-    typeInput.dataset.id = row.id;
-    typeInput.value = row.loaiThietBi;
-    typeInput.setAttribute("aria-label", "Loai thiet bi");
-    typeInput.hidden = true;
-    typeCell.parentElement.append(typeInput);
-
-    typeCell.addEventListener("dblclick", () => {
-      typeCell.hidden = true;
-      typeInput.hidden = false;
-      typeInput.focus();
-    });
-
-    typeInput.addEventListener("blur", () => {
-      typeInput.hidden = true;
-      typeCell.hidden = false;
-    });
 
     tr.querySelectorAll("input[data-key]").forEach((input) => {
       const key = input.dataset.key;
@@ -243,6 +221,37 @@ function clearObjectUrl() {
     URL.revokeObjectURL(activeObjectUrl);
     activeObjectUrl = "";
   }
+}
+
+async function addWatermark(file) {
+  if (!window.PDFLib) {
+    throw new Error("Thu vien watermark PDF chua tai xong. Hay thu lai sau vai giay.");
+  }
+
+  const { PDFDocument, StandardFonts, rgb, degrees } = window.PDFLib;
+  const sourceBytes = await file.arrayBuffer();
+  const pdfDoc = await PDFDocument.load(sourceBytes);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const pages = pdfDoc.getPages();
+
+  pages.forEach((page) => {
+    const { width, height } = page.getSize();
+    const fontSize = Math.max(24, Math.min(width, height) / 16);
+    const textWidth = font.widthOfTextAtSize(watermarkText, fontSize);
+
+    page.drawText(watermarkText, {
+      x: (width - textWidth) / 2,
+      y: height / 2,
+      size: fontSize,
+      font,
+      color: rgb(0.35, 0.35, 0.35),
+      opacity: 0.18,
+      rotate: degrees(-32),
+    });
+  });
+
+  const watermarkedBytes = await pdfDoc.save();
+  return new Blob([watermarkedBytes], { type: "application/pdf" });
 }
 
 function showPreview(row) {
@@ -297,13 +306,21 @@ tableBody.addEventListener("change", async (event) => {
 
   const row = findRow(pdfInput.dataset.pdfId);
   if (!row) return;
-  row.pdfName = file.name;
-  row.pdfBlob = file;
-  await saveRow(row);
-  render();
+
+  try {
+    const watermarkedPdf = await addWatermark(file);
+    row.pdfName = file.name;
+    row.pdfBlob = watermarkedPdf;
+    await saveRow(row);
+    render();
+  } catch (error) {
+    console.error(error);
+    alert(`Khong the them watermark vao PDF: ${error.message}`);
+    pdfInput.value = "";
+  }
 });
 
-tableBody.addEventListener("mouseover", (event) => {
+tableBody.addEventListener("click", (event) => {
   const typeCell = event.target.closest(".type-cell");
   if (!typeCell) return;
   const row = findRow(typeCell.dataset.id);

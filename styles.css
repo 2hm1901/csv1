@@ -174,15 +174,24 @@ td input:focus {
 .type-cell {
   display: block;
   width: 100%;
-  min-height: 43px;
-  padding: 10px;
+  height: 43px;
+  border: 0;
+  background: transparent;
+  padding: 8px 10px;
   color: #0b4a89;
-  cursor: default;
-}
-
-.type-cell.has-pdf {
+  cursor: pointer;
+  outline: none;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.type-cell::placeholder {
+  color: #0b4a89;
+  opacity: 1;
+}
+
+.type-cell:focus {
+  box-shadow: inset 0 0 0 2px var(--focus);
 }
 
 .pdf-upload {
