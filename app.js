@@ -21,13 +21,29 @@ const csvHeaders = {
 };
 
 const watermarkText = "Hoàng Giang - 0969.05.6446";
+const adminCredentials = {
+  username: "giang",
+  password: "giang123",
+};
 const storeName = "rows";
 const dbName = "csv1-device-table";
 let db;
 let rows = [];
 let activeObjectUrl = "";
+let currentRole = sessionStorage.getItem("csv1-role") || "";
 
 const appShell = document.querySelector(".app-shell");
+const authScreen = document.querySelector("#authScreen");
+const roleChoices = document.querySelector("#roleChoices");
+const adminChoice = document.querySelector("#adminChoice");
+const userChoice = document.querySelector("#userChoice");
+const adminLoginForm = document.querySelector("#adminLoginForm");
+const adminUsername = document.querySelector("#adminUsername");
+const adminPassword = document.querySelector("#adminPassword");
+const loginError = document.querySelector("#loginError");
+const backToRoles = document.querySelector("#backToRoles");
+const roleBadge = document.querySelector("#roleBadge");
+const logoutButton = document.querySelector("#logoutButton");
 const tableBody = document.querySelector("#tableBody");
 const emptyState = document.querySelector("#emptyState");
 const csvInput = document.querySelector("#csvInput");
@@ -53,6 +69,34 @@ function openDb() {
 
 function tx(mode = "readonly") {
   return db.transaction(storeName, mode).objectStore(storeName);
+}
+
+function setRole(role) {
+  currentRole = role;
+  sessionStorage.setItem("csv1-role", role);
+  authScreen.classList.add("hidden");
+  appShell.classList.remove("hidden");
+  roleBadge.textContent = role === "admin" ? "Admin: khong watermark" : "User: co watermark";
+}
+
+function resetAuth() {
+  currentRole = "";
+  sessionStorage.removeItem("csv1-role");
+  hidePreview();
+  appShell.classList.add("hidden");
+  authScreen.classList.remove("hidden");
+  roleChoices.classList.remove("hidden");
+  adminLoginForm.classList.add("hidden");
+  loginError.textContent = "";
+  adminUsername.value = "";
+  adminPassword.value = "";
+}
+
+function showAdminLogin() {
+  roleChoices.classList.add("hidden");
+  adminLoginForm.classList.remove("hidden");
+  loginError.textContent = "";
+  adminUsername.focus();
 }
 
 function loadRows() {
@@ -324,9 +368,9 @@ tableBody.addEventListener("change", async (event) => {
   if (!row) return;
 
   try {
-    const watermarkedPdf = await addWatermark(file);
+    const pdfBlob = currentRole === "admin" ? file : await addWatermark(file);
     row.pdfName = file.name;
-    row.pdfBlob = watermarkedPdf;
+    row.pdfBlob = pdfBlob;
     row.loaiThietBi = getDeviceNameFromPdf(file.name);
     await saveRow(row);
     render();
@@ -376,6 +420,38 @@ clearButton.addEventListener("click", async () => {
   render();
 });
 
+adminChoice.addEventListener("click", showAdminLogin);
+
+userChoice.addEventListener("click", () => {
+  setRole("user");
+});
+
+backToRoles.addEventListener("click", () => {
+  roleChoices.classList.remove("hidden");
+  adminLoginForm.classList.add("hidden");
+  loginError.textContent = "";
+  adminUsername.value = "";
+  adminPassword.value = "";
+});
+
+adminLoginForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  if (
+    adminUsername.value.trim() === adminCredentials.username &&
+    adminPassword.value === adminCredentials.password
+  ) {
+    setRole("admin");
+    adminUsername.value = "";
+    adminPassword.value = "";
+    return;
+  }
+
+  loginError.textContent = "Tai khoan hoac mat khau khong dung.";
+});
+
+logoutButton.addEventListener("click", resetAuth);
+
 csvInput.addEventListener("change", async () => {
   const file = csvInput.files[0];
   if (!file) return;
@@ -395,6 +471,12 @@ openDb()
     db = database;
     rows = await loadRows();
     render();
+
+    if (currentRole === "admin" || currentRole === "user") {
+      setRole(currentRole);
+    } else {
+      resetAuth();
+    }
   })
   .catch((error) => {
     console.error(error);

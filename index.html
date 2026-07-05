@@ -7,19 +7,49 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="app-shell">
+    <section id="authScreen" class="auth-screen" aria-label="Chon vai tro">
+      <div class="auth-panel">
+        <h1>Quan ly thiet bi</h1>
+        <p>Chon che do truy cap de tiep tuc.</p>
+
+        <div id="roleChoices" class="role-choices">
+          <button id="adminChoice" type="button">Admin</button>
+          <button id="userChoice" type="button">User</button>
+        </div>
+
+        <form id="adminLoginForm" class="admin-login hidden">
+          <label>
+            Tai khoan
+            <input id="adminUsername" type="text" autocomplete="username" />
+          </label>
+          <label>
+            Mat khau
+            <input id="adminPassword" type="password" autocomplete="current-password" />
+          </label>
+          <p id="loginError" class="login-error" aria-live="polite"></p>
+          <div class="login-actions">
+            <button type="submit">Dang nhap</button>
+            <button id="backToRoles" type="button">Quay lai</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <main class="app-shell hidden">
       <section class="toolbar" aria-label="Cong cu quan ly du lieu">
         <div>
           <h1>Quan ly thiet bi</h1>
           <p>Upload CSV hoac nhap tay tung dong, gan PDF va click vao Loai_thiet_bi de xem.</p>
         </div>
         <div class="toolbar-actions">
+          <span id="roleBadge" class="role-badge"></span>
           <label class="file-button">
             <input id="csvInput" type="file" accept=".csv,text/csv" />
             Upload CSV
           </label>
           <button id="addRowButton" type="button">Them dong</button>
           <button id="clearButton" class="danger" type="button">Xoa du lieu</button>
+          <button id="logoutButton" type="button">Doi vai tro</button>
         </div>
       </section>
 
