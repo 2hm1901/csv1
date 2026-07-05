@@ -170,6 +170,10 @@ function formatFileLabel(row) {
   return row.pdfName ? "Doi PDF" : "Gan PDF";
 }
 
+function getDeviceNameFromPdf(fileName) {
+  return fileName.replace(/\.pdf$/i, "").trim();
+}
+
 function render() {
   tableBody.innerHTML = "";
   emptyState.classList.toggle("hidden", rows.length > 0);
@@ -323,6 +327,7 @@ tableBody.addEventListener("change", async (event) => {
     const watermarkedPdf = await addWatermark(file);
     row.pdfName = file.name;
     row.pdfBlob = watermarkedPdf;
+    row.loaiThietBi = getDeviceNameFromPdf(file.name);
     await saveRow(row);
     render();
   } catch (error) {
