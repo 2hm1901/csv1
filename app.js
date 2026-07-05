@@ -25,7 +25,6 @@ const dbName = "csv1-device-table";
 let db;
 let rows = [];
 let activeObjectUrl = "";
-let previewCloseTimer = null;
 
 const appShell = document.querySelector(".app-shell");
 const tableBody = document.querySelector("#tableBody");
@@ -246,20 +245,7 @@ function clearObjectUrl() {
   }
 }
 
-function cancelPreviewClose() {
-  if (previewCloseTimer) {
-    clearTimeout(previewCloseTimer);
-    previewCloseTimer = null;
-  }
-}
-
-function schedulePreviewClose() {
-  cancelPreviewClose();
-  previewCloseTimer = setTimeout(hidePreview, 700);
-}
-
 function showPreview(row) {
-  cancelPreviewClose();
   clearObjectUrl();
   previewTitle.textContent = row.loaiThietBi || "Loai_thiet_bi";
   previewMeta.textContent = row.pdfName || "";
@@ -277,7 +263,6 @@ function showPreview(row) {
 }
 
 function hidePreview() {
-  cancelPreviewClose();
   appShell.classList.remove("preview-open");
   pdfPreview.classList.remove("visible");
   pdfPreview.setAttribute("aria-hidden", "true");
@@ -325,18 +310,6 @@ tableBody.addEventListener("mouseover", (event) => {
   if (row) showPreview(row);
 });
 
-tableBody.addEventListener("mouseout", (event) => {
-  const typeCell = event.target.closest(".type-cell");
-  if (!typeCell) return;
-
-  const nextTarget = event.relatedTarget;
-  if (nextTarget && pdfPreview.contains(nextTarget)) return;
-  schedulePreviewClose();
-});
-
-pdfPreview.addEventListener("mouseenter", cancelPreviewClose);
-pdfPreview.addEventListener("mouseleave", schedulePreviewClose);
-
 tableBody.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-remove-id]");
   if (!button) return;
@@ -346,6 +319,12 @@ tableBody.addEventListener("click", async (event) => {
   await deleteRow(id);
   hidePreview();
   render();
+});
+
+document.addEventListener("click", (event) => {
+  if (!pdfPreview.classList.contains("visible")) return;
+  if (event.target.closest(".panel") || event.target.closest("#pdfPreview")) return;
+  hidePreview();
 });
 
 addRowButton.addEventListener("click", async () => {
