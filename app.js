@@ -1,0 +1,387 @@
+const columns = [
+  "loaiThietBi",
+  "nhaSanXuat",
+  "sl",
+  "model",
+  "congSuat",
+  "donViSoHuu",
+  "thoiHanKiemDinh",
+  "bienSo",
+];
+
+const csvHeaders = {
+  loaiThietBi: ["loai_thiet_bi", "loai thiet bi", "loai thiết bị", "loại thiết bị"],
+  nhaSanXuat: ["ten nha san xuat", "tên nhà sản xuất", "nha san xuat"],
+  sl: ["sl", "so luong", "số lượng"],
+  model: ["doi may (model)", "doi may", "model", "đời máy"],
+  congSuat: ["cong suat", "công suất"],
+  donViSoHuu: ["don vi so huu", "đơn vị sở hữu"],
+  thoiHanKiemDinh: ["thoi han kiem dinh", "thời hạn kiểm định"],
+  bienSo: ["bien_so", "bien so", "biển số"],
+};
+
+const storeName = "rows";
+const dbName = "csv1-device-table";
+let db;
+let rows = [];
+let activeObjectUrl = "";
+
+const tableBody = document.querySelector("#tableBody");
+const emptyState = document.querySelector("#emptyState");
+const csvInput = document.querySelector("#csvInput");
+const addRowButton = document.querySelector("#addRowButton");
+const clearButton = document.querySelector("#clearButton");
+const pdfPreview = document.querySelector("#pdfPreview");
+const previewFrame = document.querySelector("#previewFrame");
+const previewTitle = document.querySelector("#previewTitle");
+const previewMeta = document.querySelector("#previewMeta");
+
+function openDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(dbName, 1);
+
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(storeName, { keyPath: "id" });
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function tx(mode = "readonly") {
+  return db.transaction(storeName, mode).objectStore(storeName);
+}
+
+function loadRows() {
+  return new Promise((resolve, reject) => {
+    const request = tx().getAll();
+    request.onsuccess = () => resolve(request.result.sort((a, b) => a.createdAt - b.createdAt));
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function saveRow(row) {
+  return new Promise((resolve, reject) => {
+    const request = tx("readwrite").put(row);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function deleteRow(id) {
+  return new Promise((resolve, reject) => {
+    const request = tx("readwrite").delete(id);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function clearRows() {
+  return new Promise((resolve, reject) => {
+    const request = tx("readwrite").clear();
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function createEmptyRow(values = {}) {
+  return {
+    id: crypto.randomUUID(),
+    createdAt: Date.now() + Math.random(),
+    loaiThietBi: values.loaiThietBi || "",
+    nhaSanXuat: values.nhaSanXuat || "",
+    sl: values.sl || "",
+    model: values.model || "",
+    congSuat: values.congSuat || "",
+    donViSoHuu: values.donViSoHuu || "",
+    thoiHanKiemDinh: values.thoiHanKiemDinh || "",
+    bienSo: values.bienSo || "",
+    pdfName: "",
+    pdfBlob: null,
+  };
+}
+
+function normalizeHeader(value) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/_/g, " ");
+}
+
+function parseCsv(text) {
+  const rowsOut = [];
+  let cell = "";
+  let row = [];
+  let quoted = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"' && quoted && next === '"') {
+      cell += '"';
+      i += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === "," && !quoted) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && next === "\n") i += 1;
+      row.push(cell);
+      if (row.some((item) => item.trim())) rowsOut.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+
+  row.push(cell);
+  if (row.some((item) => item.trim())) rowsOut.push(row);
+  return rowsOut;
+}
+
+function mapCsvRows(csvRows) {
+  if (!csvRows.length) return [];
+
+  const headers = csvRows[0].map(normalizeHeader);
+  const indexes = {};
+
+  Object.entries(csvHeaders).forEach(([key, aliases]) => {
+    indexes[key] = headers.findIndex((header) => aliases.map(normalizeHeader).includes(header));
+  });
+
+  return csvRows.slice(1).map((csvRow) => {
+    const values = {};
+    columns.forEach((key) => {
+      const index = indexes[key];
+      values[key] = index >= 0 ? (csvRow[index] || "").trim() : "";
+    });
+    return createEmptyRow(values);
+  });
+}
+
+function formatFileLabel(row) {
+  return row.pdfName ? "Doi PDF" : "Gan PDF";
+}
+
+function render() {
+  tableBody.innerHTML = "";
+  emptyState.classList.toggle("hidden", rows.length > 0);
+
+  rows.forEach((row, index) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${index + 1}</td>
+      <td><span class="type-cell ${row.pdfBlob ? "has-pdf" : ""}" data-id="${row.id}"></span></td>
+      <td><input type="text" data-key="nhaSanXuat" data-id="${row.id}" /></td>
+      <td><input type="number" min="0" data-key="sl" data-id="${row.id}" /></td>
+      <td><input type="text" data-key="model" data-id="${row.id}" /></td>
+      <td><input type="text" data-key="congSuat" data-id="${row.id}" /></td>
+      <td><input type="text" data-key="donViSoHuu" data-id="${row.id}" /></td>
+      <td><input type="text" data-key="thoiHanKiemDinh" data-id="${row.id}" /></td>
+      <td><input type="text" data-key="bienSo" data-id="${row.id}" /></td>
+      <td>
+        <label class="pdf-upload">
+          <input type="file" accept="application/pdf" data-pdf-id="${row.id}" />
+          ${formatFileLabel(row)}
+        </label>
+      </td>
+      <td><button class="remove-row" type="button" data-remove-id="${row.id}">Xoa</button></td>
+    `;
+
+    const typeCell = tr.querySelector(".type-cell");
+    typeCell.textContent = row.loaiThietBi || "(trong)";
+
+    const typeInput = document.createElement("input");
+    typeInput.type = "text";
+    typeInput.dataset.key = "loaiThietBi";
+    typeInput.dataset.id = row.id;
+    typeInput.value = row.loaiThietBi;
+    typeInput.setAttribute("aria-label", "Loai thiet bi");
+    typeInput.hidden = true;
+    typeCell.parentElement.append(typeInput);
+
+    typeCell.addEventListener("dblclick", () => {
+      typeCell.hidden = true;
+      typeInput.hidden = false;
+      typeInput.focus();
+    });
+
+    typeInput.addEventListener("blur", () => {
+      typeInput.hidden = true;
+      typeCell.hidden = false;
+    });
+
+    tr.querySelectorAll("input[data-key]").forEach((input) => {
+      const key = input.dataset.key;
+      input.value = row[key] || "";
+    });
+
+    tableBody.append(tr);
+  });
+}
+
+function findRow(id) {
+  return rows.find((row) => row.id === id);
+}
+
+async function updateField(id, key, value) {
+  const row = findRow(id);
+  if (!row) return;
+  row[key] = value;
+  await saveRow(row);
+  render();
+}
+
+function clearObjectUrl() {
+  if (activeObjectUrl) {
+    URL.revokeObjectURL(activeObjectUrl);
+    activeObjectUrl = "";
+  }
+}
+
+function positionPreview(event) {
+  const margin = 18;
+  const rect = pdfPreview.getBoundingClientRect();
+  let left = event.clientX + margin;
+  let top = event.clientY + margin;
+
+  if (left + rect.width > window.innerWidth) {
+    left = event.clientX - rect.width - margin;
+  }
+
+  if (top + rect.height > window.innerHeight) {
+    top = window.innerHeight - rect.height - margin;
+  }
+
+  pdfPreview.style.left = `${Math.max(margin, left)}px`;
+  pdfPreview.style.top = `${Math.max(margin, top)}px`;
+}
+
+function showPreview(row, event) {
+  clearObjectUrl();
+  previewTitle.textContent = row.loaiThietBi || "Loai_thiet_bi";
+  previewMeta.textContent = row.pdfName || "";
+  pdfPreview.classList.toggle("no-pdf", !row.pdfBlob);
+  pdfPreview.classList.add("visible");
+  pdfPreview.setAttribute("aria-hidden", "false");
+
+  if (row.pdfBlob) {
+    activeObjectUrl = URL.createObjectURL(row.pdfBlob);
+    previewFrame.src = activeObjectUrl;
+  } else {
+    previewFrame.removeAttribute("src");
+  }
+
+  positionPreview(event);
+}
+
+function hidePreview() {
+  pdfPreview.classList.remove("visible");
+  pdfPreview.setAttribute("aria-hidden", "true");
+  previewFrame.removeAttribute("src");
+  clearObjectUrl();
+}
+
+tableBody.addEventListener("input", (event) => {
+  const input = event.target.closest("input[data-key]");
+  if (!input) return;
+  const row = findRow(input.dataset.id);
+  if (!row) return;
+  row[input.dataset.key] = input.value;
+});
+
+tableBody.addEventListener("change", async (event) => {
+  const fieldInput = event.target.closest("input[data-key]");
+  if (fieldInput) {
+    await updateField(fieldInput.dataset.id, fieldInput.dataset.key, fieldInput.value);
+    return;
+  }
+
+  const pdfInput = event.target.closest("input[data-pdf-id]");
+  if (!pdfInput || !pdfInput.files.length) return;
+
+  const file = pdfInput.files[0];
+  if (file.type !== "application/pdf") {
+    alert("Hay chon file PDF.");
+    pdfInput.value = "";
+    return;
+  }
+
+  const row = findRow(pdfInput.dataset.pdfId);
+  if (!row) return;
+  row.pdfName = file.name;
+  row.pdfBlob = file;
+  await saveRow(row);
+  render();
+});
+
+tableBody.addEventListener("mouseover", (event) => {
+  const typeCell = event.target.closest(".type-cell");
+  if (!typeCell) return;
+  const row = findRow(typeCell.dataset.id);
+  if (row) showPreview(row, event);
+});
+
+tableBody.addEventListener("mousemove", (event) => {
+  if (pdfPreview.classList.contains("visible")) positionPreview(event);
+});
+
+tableBody.addEventListener("mouseout", (event) => {
+  if (event.target.closest(".type-cell")) hidePreview();
+});
+
+tableBody.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-remove-id]");
+  if (!button) return;
+
+  const id = button.dataset.removeId;
+  rows = rows.filter((row) => row.id !== id);
+  await deleteRow(id);
+  hidePreview();
+  render();
+});
+
+addRowButton.addEventListener("click", async () => {
+  const row = createEmptyRow();
+  rows.push(row);
+  await saveRow(row);
+  render();
+});
+
+clearButton.addEventListener("click", async () => {
+  if (!confirm("Xoa toan bo du lieu dang luu tren trinh duyet nay?")) return;
+  rows = [];
+  await clearRows();
+  hidePreview();
+  render();
+});
+
+csvInput.addEventListener("change", async () => {
+  const file = csvInput.files[0];
+  if (!file) return;
+
+  const text = await file.text();
+  const importedRows = mapCsvRows(parseCsv(text));
+  rows = rows.concat(importedRows);
+  await Promise.all(importedRows.map(saveRow));
+  csvInput.value = "";
+  render();
+});
+
+window.addEventListener("beforeunload", clearObjectUrl);
+
+openDb()
+  .then(async (database) => {
+    db = database;
+    rows = await loadRows();
+    render();
+  })
+  .catch((error) => {
+    console.error(error);
+    alert("Khong the khoi tao noi luu du lieu tren trinh duyet.");
+  });
