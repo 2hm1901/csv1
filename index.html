@@ -24,6 +24,15 @@
       </section>
 
       <div class="content-layout">
+        <aside id="pdfPreview" class="pdf-preview" aria-hidden="true">
+          <div class="preview-header">
+            <strong id="previewTitle">PDF</strong>
+            <span id="previewMeta"></span>
+          </div>
+          <iframe id="previewFrame" title="Xem truoc PDF"></iframe>
+          <div id="previewFallback" class="preview-fallback">Dong nay chua gan file PDF.</div>
+        </aside>
+
         <section class="panel" aria-label="Bang thiet bi">
           <div class="table-wrap">
             <table>
@@ -49,15 +58,6 @@
             Chua co du lieu. Hay upload CSV hoac them dong moi.
           </div>
         </section>
-
-        <aside id="pdfPreview" class="pdf-preview" aria-hidden="true">
-          <div class="preview-header">
-            <strong id="previewTitle">PDF</strong>
-            <span id="previewMeta"></span>
-          </div>
-          <iframe id="previewFrame" title="Xem truoc PDF"></iframe>
-          <div id="previewFallback" class="preview-fallback">Dong nay chua gan file PDF.</div>
-        </aside>
       </div>
     </main>
 
