@@ -148,6 +148,8 @@ function createEmptyRow(values = {}) {
     bienSo: values.bienSo || "",
     pdfName: "",
     pdfBlob: null,
+    pdfOriginalBlob: null,
+    pdfWatermarkedBlob: null,
   };
 }
 
@@ -327,17 +329,38 @@ async function addWatermark(file) {
   return new Blob([watermarkedBytes], { type: "application/pdf" });
 }
 
-function showPreview(row) {
+async function getPreviewPdf(row) {
+  if (isAdmin()) {
+    return row.pdfOriginalBlob || row.pdfBlob;
+  }
+
+  if (row.pdfWatermarkedBlob) {
+    return row.pdfWatermarkedBlob;
+  }
+
+  const sourcePdf = row.pdfOriginalBlob || row.pdfBlob;
+  if (!sourcePdf) {
+    return null;
+  }
+
+  row.pdfWatermarkedBlob = await addWatermark(sourcePdf);
+  await saveRow(row);
+  return row.pdfWatermarkedBlob;
+}
+
+async function showPreview(row) {
   clearObjectUrl();
   previewTitle.textContent = row.loaiThietBi || "Loai_thiet_bi";
   previewMeta.textContent = row.pdfName || "";
-  pdfPreview.classList.toggle("no-pdf", !row.pdfBlob);
+  const previewPdf = await getPreviewPdf(row);
+
+  pdfPreview.classList.toggle("no-pdf", !previewPdf);
   appShell.classList.add("preview-open");
   pdfPreview.classList.add("visible");
   pdfPreview.setAttribute("aria-hidden", "false");
 
-  if (row.pdfBlob) {
-    activeObjectUrl = URL.createObjectURL(row.pdfBlob);
+  if (previewPdf) {
+    activeObjectUrl = URL.createObjectURL(previewPdf);
     previewFrame.src = activeObjectUrl;
   } else {
     previewFrame.removeAttribute("src");
@@ -383,9 +406,11 @@ tableBody.addEventListener("change", async (event) => {
   if (!row) return;
 
   try {
-    const pdfBlob = currentRole === "admin" ? file : await addWatermark(file);
+    const watermarkedPdf = await addWatermark(file);
     row.pdfName = file.name;
-    row.pdfBlob = pdfBlob;
+    row.pdfBlob = file;
+    row.pdfOriginalBlob = file;
+    row.pdfWatermarkedBlob = watermarkedPdf;
     row.loaiThietBi = getDeviceNameFromPdf(file.name);
     await saveRow(row);
     render();
@@ -396,11 +421,18 @@ tableBody.addEventListener("change", async (event) => {
   }
 });
 
-tableBody.addEventListener("click", (event) => {
+tableBody.addEventListener("click", async (event) => {
   const typeCell = event.target.closest(".type-cell");
   if (!typeCell) return;
   const row = findRow(typeCell.dataset.id);
-  if (row) showPreview(row);
+  if (!row) return;
+
+  try {
+    await showPreview(row);
+  } catch (error) {
+    console.error(error);
+    alert(`Khong the mo PDF preview: ${error.message}`);
+  }
 });
 
 tableBody.addEventListener("click", async (event) => {
